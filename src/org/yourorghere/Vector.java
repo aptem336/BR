@@ -52,10 +52,22 @@ public class Vector {
         z += v.z;
     }
 
+    public void add(Vector v, double value) {
+        x += v.x * value;
+        y += v.y * value;
+        z += v.z * value;
+    }
+
     public void sub(Vector v) {
         x -= v.x;
         y -= v.y;
         z -= v.z;
+    }
+
+    public void sub(Vector v, double value) {
+        x -= v.x * value;
+        y -= v.y * value;
+        z -= v.z * value;
     }
 
     public void mul(float val) {
@@ -94,32 +106,6 @@ public class Vector {
     //векторное произведение даёт вектор перпендикулярный перемноженным
     public static Vector getCrossProduct(Vector a, Vector b) {
         return new Vector(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
-    }
-
-    //получение повёрнутой точки
-    public static Vector getRotated(Vector vector, Vector fi) {
-        //если угол = 0 - возращаем точку
-        if (fi.len() == 0) {
-            return vector;
-        }
-        //ось = нормализованному вектору поворота, не знаю как, но это работает) 
-        Vector axis = fi.getNormalized();
-        //угол поворота = длине вектора поворота
-        double o = fi.len();
-        return getRotated(vector, axis, o);
-    }
-
-    private static Vector getRotated(Vector a, Vector axis, double o) {
-        float cos = (float) Math.cos(o);
-        float sin = (float) Math.sin(o);
-        //матрица поворота вокруг произвольной оси
-        Vector[] matrix = {
-            new Vector(cos + (1 - cos) * axis.x * axis.x, (1 - cos) * axis.x * axis.y - sin * axis.z, (1 - cos) * axis.x * axis.z + sin * axis.y),
-            new Vector((1 - cos) * axis.x * axis.y + sin * axis.z, cos + (1 - cos) * axis.y * axis.y, (1 - cos) * axis.y * axis.z - sin * axis.x),
-            new Vector((1 - cos) * axis.x * axis.z - sin * axis.y, (1 - cos) * axis.y * axis.z + sin * axis.x, cos + (1 - cos) * axis.z * axis.z)
-        };
-        //произедение матриц есть комбинпция всех возможных скалярных произведений...в отчёте есть это
-        return new Vector(getDotProduct(a, matrix[0]), getDotProduct(a, matrix[1]), getDotProduct(a, matrix[2]));
     }
 
     //нормализация - укорачивания до длины 1 нужно для поворота т.к. ось должна быть единичной

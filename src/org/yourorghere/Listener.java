@@ -22,14 +22,13 @@ public class Listener implements KeyListener, MouseListener, MouseMotionListener
     @Override
     public void keyPressed(KeyEvent e) {
         if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
-            BR.resetRotate();
-            BR.reserCam();
+            BR.reset();
         }
         if (e.getKeyCode() == KeyEvent.VK_Q) {
-            length += 0.1d;
+            length += 0.5d;
         }
         if (e.getKeyCode() == KeyEvent.VK_E) {
-            length -= 0.1d;
+            length -= 0.5d;
         }
         if (e.getKeyCode() == KeyEvent.VK_W) {
             vertical -= 0.1d;
@@ -43,11 +42,25 @@ public class Listener implements KeyListener, MouseListener, MouseMotionListener
         if (e.getKeyCode() == KeyEvent.VK_D) {
             horizontal -= 0.1d;
         }
-        if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-            Body.solid = !Body.solid;
-        }
         if (e.getKeyCode() == KeyEvent.VK_SPACE) {
             BR.move = !BR.move;
+        }
+        if (e.getKeyCode() == KeyEvent.VK_1) {
+            BR.changeModel(1);
+        }
+        if (e.getKeyCode() == KeyEvent.VK_2) {
+            BR.changeModel(2);
+        }
+        if (e.getKeyCode() == KeyEvent.VK_3) {
+            BR.changeModel(3);
+        }
+        if (e.getKeyCode() == KeyEvent.VK_OPEN_BRACKET) {
+            Body.resist -= 0.025;
+            Body.resist = Math.max(0.5f, Body.resist);
+        }
+        if (e.getKeyCode() == KeyEvent.VK_CLOSE_BRACKET) {
+            Body.resist += 0.025;
+            Body.resist = Math.min(1.0f, Body.resist);
         }
     }
 
@@ -66,7 +79,7 @@ public class Listener implements KeyListener, MouseListener, MouseMotionListener
 
     @Override
     public void mouseReleased(MouseEvent e) {
-        BR.twist(new Vector((CLICK.x - e.getX()) / 500.0f, (e.getY() - CLICK.y) / 500.0f, 0.0f));
+        BR.addMomentum(BR.camera.getInvert(), new Vector(0.0f, (e.getY() - CLICK.y), (e.getX() - CLICK.x)));
     }
 
     @Override
@@ -87,9 +100,8 @@ public class Listener implements KeyListener, MouseListener, MouseMotionListener
 
     @Override
     public void mouseWheelMoved(MouseWheelEvent e) {
-        Body.RC += e.getWheelRotation() * 0.01;
-        Body.RC = Math.max(0.5f, Body.RC);
-        Body.RC = Math.min(1.0f, Body.RC);
+        Body.mass -= 0.5 * e.getWheelRotation();
+        Body.mass = Math.max(1.0f, Body.mass);
     }
 
 }

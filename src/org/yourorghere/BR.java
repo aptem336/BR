@@ -6,7 +6,6 @@ import java.awt.Frame;
 import java.awt.Toolkit;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Arrays;
 import javax.media.opengl.GL;
 import javax.media.opengl.GLAutoDrawable;
 import javax.media.opengl.GLCanvas;
@@ -19,7 +18,7 @@ public class BR implements GLEventListener {
     public static int[] VIEWPORT = new int[4];
 
     public static void main(String[] args) {
-        Frame frame = new Frame("BR");
+        Frame frame = new Frame("Rotation");
         SIZE = Toolkit.getDefaultToolkit().getScreenSize().height - 30;
         frame.setSize(SIZE, SIZE);
         frame.setVisible(true);
@@ -48,34 +47,30 @@ public class BR implements GLEventListener {
         animator.start();
     }
 
-    private static GL gl;
+    public static GL gl;
     private static GLU glu;
     private static GLUT glut;
 
-    //массив объектов
-    private static Body[] bodyes = new Body[0];
+    public static void addMomentum(Vector a, Vector F) {
+        Body.addMomentum(a, F);
+    }
 
-    public static void resetRotate() {
-        for (Body body : bodyes) {
-            body.w.set(Vector.NULL);
-            body.fi.set(Vector.NULL);
+    public static void changeModel(int i) {
+        switch (i) {
+            case 1:
+                Body.init(offsets1, faces1, 1.0f);
+                break;
+            case 2:
+                Body.init(offsets2, faces2, 3.0f);
+                break;
+            case 3:
+                Body.init(offsets3, faces3, 3.0f);
+                break;
         }
     }
 
-    public static void twist(Vector impulse) {
-        if (move) {
-            for (Body body : bodyes) {
-                body.twist(impulse);
-            }
-        }
-    }
-
-    private static void loadBody(String path, float scale) {
-        //увеличиваем массив
-        bodyes = Arrays.copyOf(bodyes, bodyes.length + 1);
-        //добавляем новый объект в конец
-        bodyes[bodyes.length - 1] = new Body(path, scale);
-    }
+    private static Vector[] offsets1, offsets2, offsets3;
+    private static int[][] faces1, faces2, faces3;
 
     @Override
     public void init(GLAutoDrawable drawable) {
@@ -83,12 +78,26 @@ public class BR implements GLEventListener {
         glu = new GLU();
         glut = new GLUT();
 
-        reserCam();
+        ObjLoader.readObj("cat.obj");
+        offsets1 = new Vector[ObjLoader.vertexs.size()];
+        ObjLoader.vertexs.toArray(offsets1);
+        faces1 = new int[ObjLoader.faces.size()][3];
+        ObjLoader.faces.toArray(faces1);
 
-        //грузим модельки по названию, вторая величина - масштаб
-        loadBody("suzanne.obj", 1);
-        loadBody("elephan.obj", 4);
-        loadBody("tree.obj", 1);
+        ObjLoader.readObj("wolf.obj");
+        offsets2 = new Vector[ObjLoader.vertexs.size()];
+        ObjLoader.vertexs.toArray(offsets2);
+        faces2 = new int[ObjLoader.faces.size()][3];
+        ObjLoader.faces.toArray(faces2);
+
+        ObjLoader.readObj("deer.obj");
+        offsets3 = new Vector[ObjLoader.vertexs.size()];
+        ObjLoader.vertexs.toArray(offsets3);
+        faces3 = new int[ObjLoader.faces.size()][3];
+        ObjLoader.faces.toArray(faces3);
+
+        changeModel(2);
+        reset();
 
         //установка освещения
         gl.glEnable(GL.GL_LIGHTING);
@@ -131,10 +140,11 @@ public class BR implements GLEventListener {
     public static Vector camera = new Vector();
 
     //начальное положение камеры
-    public static void reserCam() {
-        length = 20d;
+    public static void reset() {
+        length = 50d;
         vertical = 1.5d;
-        horizontal = 1.5d;
+        horizontal = 0.5d;
+        Body.reset();
     }
 
     //положение камеры через параметрическое уравнение окржнуостий
@@ -171,35 +181,38 @@ public class BR implements GLEventListener {
             frames = 0;
         }
         frames++;
-        //сдвиг по х для того чтобы модельки не сталкивались
-        float bias = -5.0f;
-        for (Body body : bodyes) {
-            if (move) {
-                body.integrate();
-            }
-            gl.glPushMatrix();
-            //смещаем
-            gl.glTranslatef(bias, 0.0f, 0.0f);
-            //рисуем
-            body.build(gl, glut);
-            gl.glPopMatrix();
-            //каждое тело - слегка правее
-            bias += 5.0f;
+        if (move) {
+            Body.integrate();
         }
+        Body.draw();
+
         drawText(drawable);
         gl.glFlush();
     }
 
     private static void drawText(GLAutoDrawable drawable) {
-        gl.glColor4f(1.0f, 0.5f, 0.0f, 1.0f);
+        gl.glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
         gl.glWindowPos2i(10, drawable.getHeight() - 50);
-        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_18, fps + "   fps");
-        gl.glWindowPos2i(10, drawable.getHeight() - 75);
-        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_18, 1.5f - Body.RC + "   Resist coefficient");
-        gl.glWindowPos2i(drawable.getWidth() - 300, drawable.getHeight() - 50);
-        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_18, "Enter - on/off skeleton rendering");
-        gl.glWindowPos2i(drawable.getWidth() - 300, drawable.getHeight() - 75);
-        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_18, "Mouse wheel - +/- resist coefficient");
+        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_12, fps + "   fps");
+        gl.glWindowPos2i(10, drawable.getHeight() - 70);
+        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_12, Body.mass + "   mass");
+        gl.glWindowPos2i(10, drawable.getHeight() - 90);
+        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_12, Body.resist * 2.0f - 1.0f + "   resist");
+        gl.glWindowPos2i(10, drawable.getHeight() - 110);
+        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_12, Body.J * Body.mass + "   J");
+
+        gl.glWindowPos2i(drawable.getWidth() - 200, drawable.getHeight() - 50);
+        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_12, "Esc - reset");
+        gl.glWindowPos2i(drawable.getWidth() - 200, drawable.getHeight() - 70);
+        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_12, "W,S,D,A,E,Q - camera");
+        gl.glWindowPos2i(drawable.getWidth() - 200, drawable.getHeight() - 90);
+        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_12, "Space - pause");
+        gl.glWindowPos2i(drawable.getWidth() - 200, drawable.getHeight() - 110);
+        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_12, "Mouse drag - add momemtum");
+        gl.glWindowPos2i(drawable.getWidth() - 200, drawable.getHeight() - 130);
+        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_12, "[, ] - +/- resist");
+        gl.glWindowPos2i(drawable.getWidth() - 200, drawable.getHeight() - 150);
+        glut.glutBitmapString(GLUT.BITMAP_HELVETICA_12, "1,2,3 - change model");
 
     }
 
